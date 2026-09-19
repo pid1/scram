@@ -1,0 +1,65 @@
+name = "scram"
+main = "src/index.ts"
+compatibility_date = "2026-08-22"
+
+# The status page is a static asset. It reads everything it shows from
+# /api/status, so the Worker is not invoked to serve the shell.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "404-page"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "scram"
+# Filled in by scripts/setup.sh, or by `wrangler d1 create scram`.
+database_id = ""
+
+# How often to check. Every 15 minutes is the default: frequent enough that a
+# runaway is caught in minutes rather than the ~24h a Cloudflare budget alert
+# would take, cheap enough to be a rounding error (2,880 requests/month).
+#
+# The tradeoff is upstream: Cloudflare's GraphQL analytics lag real time by a
+# minute or two for most datasets, and R2 storage is sampled far more coarsely.
+# Checking every minute would not make the numbers fresher.
+[triggers]
+crons = ["*/15 * * * *"]
+
+[observability]
+enabled = true
+
+[vars]
+# Everything here is safe to commit. Secrets go in .dev.vars / wrangler secret.
+
+# The account to watch. Left empty, scram resolves it at runtime from whatever
+# the token can see, and refuses to act if the token can see more than one.
+CF_ACCOUNT_ID = ""
+
+# Dollar thresholds against ESTIMATED usage-based spend for the billing cycle.
+# Recurring subscription fees (the $5 Workers Paid plan fee, zone plans) are
+# not usage and are deliberately not counted -- you cannot switch them off by
+# disabling a route, so including them would only eat headroom.
+WARN_AT_USD = "5"
+SCRAM_AT_USD = "20"
+
+# Day of the month your billing cycle starts, per the Cloudflare dashboard
+# under Manage Account > Billing. Usage is summed from this day.
+BILLING_CYCLE_DAY = "1"
+
+# THE SAFETY CATCH. "0" means observe and report only: scram computes the
+# estimate, records it, and logs exactly what it WOULD disable, but changes
+# nothing. Run it this way until you trust the numbers.
+ARMED = "0"
+
+# Scripts scram must never disable, comma-separated. Its own name is always
+# added to this list -- it cannot switch itself off, because then nothing could
+# switch it back on.
+PROTECT = ""
+
+# What a trip actually does, comma-separated, applied in this order.
+#   routes          - delete zone routes pointing at a Worker
+#   custom_domains  - delete Worker custom domains
+#   crons           - clear scheduled triggers
+#   subdomain       - disable the workers.dev subdomain for a script
+# Dropping one of these from the list leaves that surface running.
+ACTIONS = "routes,custom_domains,crons,subdomain"

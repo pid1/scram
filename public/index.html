@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>scram</title>
+    <style>
+      :root {
+        --bg: #fbfbf9; --fg: #1a1a18; --dim: #6b6b63;
+        --rule: #dcdcd4; --ok: #2f6f4f; --warn: #8a6d1f; --trip: #a33; --accent: #1a1a18;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #14140f; --fg: #e8e8e0; --dim: #90908a;
+          --rule: #2e2e28; --ok: #7fb99a; --warn: #d4b45a; --trip: #e07b7b; --accent: #e8e8e0;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; padding: 2rem 1rem; background: var(--bg); color: var(--fg);
+        font: 15px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      main { max-width: 52rem; margin: 0 auto; }
+      h1 { font-size: 1.3rem; margin: 0 0 .2rem; letter-spacing: .02em; }
+      .sub { color: var(--dim); margin: 0 0 1.6rem; }
+      .state { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap;
+        padding: 1rem 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); }
+      .amount { font-size: 2.4rem; font-weight: 600; letter-spacing: -.02em; }
+      .of { color: var(--dim); }
+      .badge { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em;
+        padding: .2rem .5rem; border: 1px solid currentColor; border-radius: 2px; }
+      .ok { color: var(--ok); } .warn { color: var(--warn); } .trip { color: var(--trip); }
+      table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; font-size: 13.5px; }
+      th, td { text-align: left; padding: .38rem .5rem .38rem 0; border-bottom: 1px solid var(--rule); }
+      th { color: var(--dim); font-weight: 500; font-size: .75rem;
+        text-transform: uppercase; letter-spacing: .06em; }
+      td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+      .bar { height: 3px; background: var(--rule); position: relative; width: 100%; min-width: 60px; }
+      .bar > i { position: absolute; inset: 0 auto 0 0; background: var(--ok); }
+      .bar.w > i { background: var(--warn); } .bar.t > i { background: var(--trip); }
+      h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+        color: var(--dim); font-weight: 500; margin: 2rem 0 .4rem; }
+      input, button { font: inherit; padding: .4rem .6rem; background: var(--bg);
+        color: var(--fg); border: 1px solid var(--rule); border-radius: 2px; }
+      button { cursor: pointer; border-color: var(--accent); }
+      button:hover { background: var(--accent); color: var(--bg); }
+      .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+      .muted { color: var(--dim); font-size: 13px; }
+      .banner { padding: .7rem .9rem; border: 1px solid currentColor; border-radius: 2px;
+        margin: 1rem 0; }
+      code { background: var(--rule); padding: .1rem .3rem; border-radius: 2px; }
+      @media (max-width: 34rem) { .amount { font-size: 1.9rem; } body { padding: 1.2rem 1rem; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>scram</h1>
+      <p class="sub">Cloudflare spend kill switch</p>
+      <div id="app"><p class="muted">Loading…</p></div>
+    </main>
+
+    <script>
+      const app = document.getElementById("app");
+      const KEY = "scram.token";
+      const money = (n) => "$" + Number(n).toFixed(2);
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+        ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+      function num(n) {
+        if (n === 0) return "0";
+        if (n < 1) return n.toFixed(3).replace(/0+$/, "");
+        if (n < 1000) return Math.round(n).toLocaleString();
+        if (n < 1e6) return (n / 1e3).toFixed(1) + "K";
+        if (n < 1e9) return (n / 1e6).toFixed(1) + "M";
+        return (n / 1e9).toFixed(2) + "B";
+      }
+
+      function askForToken(message) {
+        app.innerHTML =
+          '<p class="muted">' + esc(message || "Paste the admin token to view status.") + "</p>" +
+          '<div class="row"><input id="tok" type="password" placeholder="admin token" ' +
+          'style="flex:1;min-width:16rem" autocomplete="off"><button id="go">Unlock</button></div>';
+        const go = () => {
+          const v = document.getElementById("tok").value.trim();
+          if (!v) return;
+          try { localStorage.setItem(KEY, v); } catch {}
+          load();
+        };
+        document.getElementById("go").onclick = go;
+        document.getElementById("tok").onkeydown = (e) => { if (e.key === "Enter") go(); };
+      }
+
+      function token() {
+        try { return localStorage.getItem(KEY); } catch { return null; }
+      }
+
+      async function api(path, method = "GET", body) {
+        const res = await fetch(path, {
+          method,
+          headers: {
+            Authorization: "Bearer " + token(),
+            ...(body ? { "Content-Type": "application/json" } : {}),
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+        if (res.status === 401) throw Object.assign(new Error("unauthorized"), { auth: true });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "request failed");
+        return json;
+      }
+
+      function render(s) {
+        const latest = s.latest;
+        const total = latest ? latest.totalUsd : 0;
+        const level = total >= s.scramAtUsd ? "trip" : total >= s.warnAtUsd ? "warn" : "ok";
+        const parts = [];
+
+        if (s.activeTrip) {
+          parts.push(
+            '<div class="banner trip"><strong>TRIPPED</strong> at ' +
+            esc(s.activeTrip.trippedAt) + "<br>" + esc(s.activeTrip.reason) +
+            '<br><br><button id="restore">Restore everything</button></div>');
+        }
+
+        if (!s.armed) {
+          parts.push(
+            '<div class="banner warn"><strong>SAFETY ON</strong> — <code>ARMED</code> is ' +
+            "<code>0</code>. scram is watching and recording, but will not disable anything. " +
+            "Set <code>ARMED = \"1\"</code> in wrangler.toml and redeploy to arm it.</div>");
+        }
+
+        parts.push(
+          '<div class="state"><span class="amount ' + level + '">' + money(total) + "</span>" +
+          '<span class="of">of ' + money(s.scramAtUsd) + " · warn at " + money(s.warnAtUsd) + "</span>" +
+          '<span class="badge ' + (s.armed ? "trip" : "warn") + '">' +
+          (s.armed ? "armed" : "safe") + "</span></div>");
+
+        if (latest) {
+          parts.push('<p class="muted">Estimated usage-based spend this billing cycle, ' +
+            "from " + esc(latest.cycleStart.slice(0, 10)) + ". Last checked " +
+            esc(latest.observedAt.replace("T", " ").slice(0, 16)) + " UTC.</p>");
+
+          const failed = Object.keys(latest.failures || {});
+          if (failed.length) {
+            parts.push('<div class="banner trip"><strong>BLIND SPOTS</strong> — could not read: ' +
+              failed.map(esc).join(", ") + ". The total below is an undercount.</div>");
+          }
+
+          const active = latest.lines.filter((l) => l.used > 0);
+          const shown = active.length ? active : latest.lines;
+          parts.push("<h2>Meters" + (active.length ? "" : " (all idle)") + "</h2><table><tr>" +
+            "<th>Product</th><th>Meter</th><th class='n'>Used</th><th class='n'>Included</th>" +
+            "<th style='width:22%'></th><th class='n'>Cost</th></tr>" +
+            shown.map((l) => {
+              const pct = Math.min(100, (l.utilisation || 0) * 100);
+              const cls = pct >= 100 ? "t" : pct >= 75 ? "w" : "";
+              return "<tr><td>" + esc(l.productLabel) + "</td><td>" + esc(l.meterLabel) +
+                "</td><td class='n'>" + num(l.used) + "</td><td class='n'>" + num(l.included) +
+                "</td><td><span class='bar " + cls + "'><i style='width:" + pct.toFixed(1) +
+                "%'></i></span></td><td class='n'>" +
+                (l.usd > 0 ? money(l.usd) : "—") + "</td></tr>";
+            }).join("") + "</table>");
+        } else {
+          parts.push('<p class="muted">No readings yet. The cron runs every 15 minutes, ' +
+            "or press Check now.</p>");
+        }
+
+        parts.push("<h2>Policy</h2><table>" +
+          "<tr><td>Disables</td><td>" + s.actions.map(esc).join(", ") + "</td></tr>" +
+          "<tr><td>Never touches</td><td>" + s.protect.map(esc).join(", ") + "</td></tr>" +
+          "<tr><td>Billing cycle day</td><td>" + esc(s.billingCycleDay) + "</td></tr>" +
+          "<tr><td>Rates verified</td><td>" + esc(s.ratesVerifiedOn) + "</td></tr></table>");
+
+        parts.push('<h2>Actions</h2><div class="row">' +
+          '<button id="check">Check now</button>' +
+          '<button id="preview">What would it disable?</button>' +
+          '<button id="forget">Forget token</button></div>' +
+          '<pre id="out" class="muted" style="white-space:pre-wrap;word-break:break-word"></pre>');
+
+        app.innerHTML = parts.join("");
+
+        const out = document.getElementById("out");
+        const show = (v) => { out.textContent = JSON.stringify(v, null, 2); };
+
+        document.getElementById("check").onclick = async () => {
+          out.textContent = "checking…";
+          try { show(await api("/api/check", "POST")); load(); } catch (e) { out.textContent = e.message; }
+        };
+        document.getElementById("preview").onclick = async () => {
+          out.textContent = "reading the account…";
+          try {
+            const inv = await api("/api/preview");
+            show({
+              wouldDisable: inv.targets.map((t) => t.kind + " · " + t.script + " · " + t.label),
+              scriptsSeen: inv.scripts,
+              discoveryFailures: inv.failures,
+            });
+          } catch (e) { out.textContent = e.message; }
+        };
+        document.getElementById("forget").onclick = () => {
+          try { localStorage.removeItem(KEY); } catch {}
+          askForToken("Token cleared.");
+        };
+        const r = document.getElementById("restore");
+        if (r) r.onclick = async () => {
+          if (!confirm("Restore every route, domain, cron and subdomain this trip disabled?")) return;
+          out.textContent = "restoring…";
+          try { show(await api("/api/restore", "POST", {})); load(); }
+          catch (e) { out.textContent = e.message; }
+        };
+      }
+
+      async function load() {
+        if (!token()) return askForToken();
+        app.innerHTML = '<p class="muted">Loading…</p>';
+        try {
+          render(await api("/api/status"));
+        } catch (e) {
+          if (e.auth) return askForToken("That token was rejected. Try again.");
+          app.innerHTML = '<div class="banner trip">' + esc(e.message) + "</div>";
+        }
+      }
+
+      load();
+    </script>
+  </body>
+</html>

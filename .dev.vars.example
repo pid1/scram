@@ -1,0 +1,11 @@
+# A Cloudflare API token. See README "The token" for the exact scopes.
+# This token can disable your Workers, so treat it like a root credential.
+CF_API_TOKEN=
+
+# Bearer token protecting /api/scram, /api/restore and /api/status.
+# Generate with: openssl rand -base64 32
+ADMIN_TOKEN=
+
+# Optional. A URL scram POSTs a JSON body to when it warns, trips or fails.
+# Anything that accepts a webhook: ntfy, Discord, Slack, your own endpoint.
+NOTIFY_WEBHOOK=

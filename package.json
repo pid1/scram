@@ -1,0 +1,24 @@
+{
+  "name": "scram",
+  "version": "0.1.0",
+  "description": "A spend kill switch for Cloudflare accounts. Estimates billable usage in near-real time and shuts the account down before the bill runs away.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "wrangler d1 migrations apply scram --remote",
+    "db:migrate:local": "wrangler d1 migrations apply scram --local",
+    "setup": "./scripts/setup.sh"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@cloudflare/workers-types": "^5.20260918.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11",
+    "wrangler": "^4.135.0"
+  }
+}
