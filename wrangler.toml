@@ -13,7 +13,7 @@ not_found_handling = "404-page"
 binding = "DB"
 database_name = "scram"
 # Filled in by scripts/setup.sh, or by `wrangler d1 create scram`.
-database_id = ""
+database_id = "316f5c5f-94a5-4ba7-b861-be785cdb6b03"
 
 # How often to check. Every 15 minutes is the default: frequent enough that a
 # runaway is caught in minutes rather than the ~24h a Cloudflare budget alert
@@ -27,6 +27,12 @@ crons = ["*/15 * * * *"]
 
 [observability]
 enabled = true
+
+# THE SAFETY CATCH lives in a secret, not here: `wrangler secret put ARMED`,
+# set to "1". Absent or anything else means observe-and-report -- scram
+# computes the estimate, records it and reports exactly what it WOULD disable,
+# but changes nothing. Keeping it out of this file means cloning the repo and
+# deploying cannot arm a kill switch against your account by accident.
 
 [vars]
 # Everything here is safe to commit. Secrets go in .dev.vars / wrangler secret.
@@ -46,11 +52,6 @@ SCRAM_AT_USD = "20"
 # under Manage Account > Billing. Usage is summed from this day.
 BILLING_CYCLE_DAY = "1"
 
-# THE SAFETY CATCH. "0" means observe and report only: scram computes the
-# estimate, records it, and logs exactly what it WOULD disable, but changes
-# nothing. Run it this way until you trust the numbers.
-ARMED = "0"
-
 # Scripts scram must never disable, comma-separated. Its own name is always
 # added to this list -- it cannot switch itself off, because then nothing could
 # switch it back on.
@@ -63,3 +64,10 @@ PROTECT = ""
 #   subdomain       - disable the workers.dev subdomain for a script
 # Dropping one of these from the list leaves that surface running.
 ACTIONS = "routes,custom_domains,crons,subdomain"
+
+# scram excludes itself from every plan it builds, so this route is never one
+# of the things it deletes. Without that, a full trip would take out the UI
+# that restores it.
+[[routes]]
+pattern = "scram.pid1.space"
+custom_domain = true

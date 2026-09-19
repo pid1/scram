@@ -83,14 +83,22 @@ never committed, and why CI here does not deploy.
 
 ### Arming it
 
-scram deploys with `ARMED = "0"`. In that state it does everything except act:
-it collects usage, prices it, records a reading, and on crossing the threshold
-it writes a full trip record and notifies you — marked as a dry run — listing
-exactly what it *would* have disabled. Nothing changes.
+scram deploys disarmed, because `ARMED` is a secret and starts unset. In that
+state it does everything except act: it collects usage, prices it, records a
+reading, and on crossing the threshold it writes a full trip record and
+notifies you — marked as a dry run — listing exactly what it *would* have
+disabled. Nothing changes.
 
 Let it run for a few days. Compare the number on the status page against
-**Manage Account → Billing → Billable Usage** in the dashboard. When you believe
-it, set `ARMED = "1"` in `wrangler.toml` and redeploy.
+**Manage Account → Billing → Billable Usage** in the dashboard. When you
+believe it, arm it:
+
+```bash
+printf 1 | npx wrangler secret put ARMED
+```
+
+Disarm again at any time with `npx wrangler secret delete ARMED`. Neither needs
+a redeploy.
 
 Check what a trip would hit at any time with **What would it disable?** on the
 status page, or `GET /api/preview`.
@@ -99,11 +107,15 @@ status page, or `GET /api/preview`.
 
 All of it is in `wrangler.toml` under `[vars]`, and none of it is secret.
 
+`ARMED` is the exception: it is a **secret**, not a var, so that cloning this
+repo and deploying cannot arm a kill switch against your account by accident.
+Set it with `npx wrangler secret put ARMED` and the value `1`. Absent, or any
+other value, means dry run.
+
 | Var | Default | Meaning |
 |---|---|---|
 | `SCRAM_AT_USD` | `20` | Estimated cycle spend that trips the switch |
 | `WARN_AT_USD` | `5` | Sends a notification, changes nothing |
-| `ARMED` | `0` | `1` lets it act. Anything else is a dry run |
 | `BILLING_CYCLE_DAY` | `1` | Day of month your cycle starts, per the dashboard |
 | `PROTECT` | *(empty)* | Extra scripts to never touch. `scram` is always included |
 | `ACTIONS` | all four | `routes`, `custom_domains`, `crons`, `subdomain` |

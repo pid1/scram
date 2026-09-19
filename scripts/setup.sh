@@ -80,8 +80,9 @@ cat <<TXT
     npm run deploy
     Open the Worker URL and paste the admin token.
 
-  scram deploys with ARMED = "0": it will watch, estimate and record, but
-  will not disable anything. Let it run a few days, confirm the numbers on
-  the status page match the Billable Usage dashboard, then set ARMED = "1"
-  in wrangler.toml and redeploy.
+  scram deploys disarmed: it will watch, estimate and record, but will not
+  disable anything. Let it run a few days, confirm the numbers on the status
+  page match the Billable Usage dashboard, then arm it with:
+
+    printf 1 | npx wrangler secret put ARMED
 TXT

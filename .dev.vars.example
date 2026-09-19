@@ -6,6 +6,10 @@ CF_API_TOKEN=
 # Generate with: openssl rand -base64 32
 ADMIN_TOKEN=
 
+# Set to 1 to let scram actually disable things. Absent or anything else is a
+# dry run. Kept out of wrangler.toml so a clone-and-deploy cannot arm itself.
+ARMED=
+
 # Optional. A URL scram POSTs a JSON body to when it warns, trips or fails.
 # Anything that accepts a webhook: ntfy, Discord, Slack, your own endpoint.
 NOTIFY_WEBHOOK=
