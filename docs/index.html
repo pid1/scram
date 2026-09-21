@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scram</title>
+<meta name="description" content="Cloudflare has no hard spending limit. scram prices your account's usage every 15 minutes and switches it off before the bill runs away.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%231a1a18'/%3E%3Crect x='14' y='29' width='36' height='6' rx='1' fill='%23e07b7b'/%3E%3Crect x='20' y='14' width='8' height='9' rx='1' fill='%23e8e8e0' opacity='.55'/%3E%3Crect x='36' y='14' width='8' height='9' rx='1' fill='%23e8e8e0' opacity='.55'/%3E%3C/svg%3E">
+<meta property="og:title" content="scram">
+<meta property="og:description" content="The missing kill switch for a Cloudflare account: prices usage every 15 minutes and shuts everything off before the bill runs away.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://pid1.github.io/scram/">
+<style>
+:root {
+  --bg: #fbfbf9; --fg: #1a1a18; --dim: #6b6b63; --rule: #dcdcd4;
+  --ok: #2f6f4f; --warn: #8a6d1f; --trip: #a33; --panel: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14140f; --fg: #e8e8e0; --dim: #90908a; --rule: #2e2e28;
+    --ok: #7fb99a; --warn: #d4b45a; --trip: #e07b7b; --panel: #1b1b16;
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 15px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  -webkit-text-size-adjust: 100%;
+}
+a { color: var(--fg); }
+a:hover { text-decoration-thickness: 2px; }
+
+header.top {
+  display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap;
+  padding: .9rem 16px; border-bottom: 1px solid var(--rule);
+  position: sticky; top: 0; background: var(--bg); z-index: 10;
+}
+header.top .brand { font-weight: 600; letter-spacing: .04em; text-decoration: none; }
+header.top nav { display: flex; gap: 1rem; margin-left: auto; flex-wrap: wrap; font-size: .8rem; }
+header.top nav a { color: var(--dim); text-decoration: none; text-transform: uppercase; letter-spacing: .06em; }
+header.top nav a:hover { color: var(--fg); }
+
+main { max-width: 56rem; margin: 0 auto; padding: 0 16px 4rem; }
+section { scroll-margin-top: 4rem; }
+
+.hero { padding: 3rem 0 2rem; }
+.hero h1 { font-size: 2.2rem; letter-spacing: -.01em; margin: 0 0 .6rem; }
+blockquote {
+  margin: 0 0 1.8rem; padding-left: 1rem; border-left: 2px solid var(--rule);
+  color: var(--dim); font-style: normal;
+}
+.hero p { margin: 0 0 1rem; max-width: 46rem; }
+.hero .headline { font-size: 1.1rem; }
+.cta { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-top: 1.6rem; }
+.btn {
+  display: inline-block; padding: .5rem 1rem; text-decoration: none;
+  border: 1px solid var(--fg); color: var(--bg); background: var(--fg);
+  font-size: .85rem; letter-spacing: .04em; text-transform: uppercase;
+}
+.btn.secondary { background: transparent; color: var(--fg); border-color: var(--rule); }
+.tag { font-size: .75rem; color: var(--dim); border: 1px solid var(--rule); padding: .2rem .5rem; text-decoration: none; }
+
+h2 {
+  font-size: .8rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--dim); font-weight: 500; margin: 3rem 0 .8rem;
+  border-top: 1px solid var(--rule); padding-top: 1.2rem;
+}
+h3 { font-size: .95rem; margin: 0 0 .3rem; }
+p { margin: 0 0 1rem; }
+
+dl.facts { margin: 0; display: grid; grid-template-columns: 1fr; gap: 1.1rem; }
+@media (min-width: 720px) { dl.facts { grid-template-columns: 1fr 1fr; gap: 1.4rem 2rem; } }
+dl.facts dt { font-weight: 600; margin-bottom: .2rem; }
+dl.facts dd { margin: 0; color: var(--dim); font-size: .92rem; }
+
+ol.trip { margin: 0 0 1.2rem; padding-left: 1.4rem; }
+ol.trip li { margin-bottom: .5rem; }
+ol.trip b { font-weight: 600; }
+
+.callout {
+  border: 1px solid var(--rule); border-left: 3px solid var(--trip);
+  background: var(--panel); padding: 1rem 1.1rem; margin: 0 0 1.2rem;
+}
+.callout.ok { border-left-color: var(--ok); }
+.callout p:last-child { margin-bottom: 0; }
+
+pre {
+  background: var(--panel); border: 1px solid var(--rule); padding: 1rem;
+  overflow-x: auto; font-size: .82rem; line-height: 1.7; margin: 0 0 1rem;
+}
+pre .c { color: var(--dim); }
+code { font-size: .9em; }
+
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+th, td { text-align: left; padding: .45rem .6rem .45rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--dim); font-weight: 500; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+td code { white-space: nowrap; }
+
+ul.notes { padding-left: 1.2rem; margin: 0 0 1rem; }
+ul.notes li { margin-bottom: .5rem; color: var(--dim); }
+ul.notes b { color: var(--fg); font-weight: 600; }
+
+footer {
+  border-top: 1px solid var(--rule); margin-top: 3rem; padding: 1.6rem 16px;
+  color: var(--dim); font-size: .8rem;
+}
+footer .inner { max-width: 56rem; margin: 0 auto; display: flex; gap: 1rem; flex-wrap: wrap; justify-content: space-between; }
+
+@media (max-width: 640px) { .hero { padding: 2rem 0 1.5rem; } .hero h1 { font-size: 1.8rem; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <a class="brand" href="./">scram</a>
+  <nav>
+    <a href="#trip">What a trip does</a>
+    <a href="#install">Install</a>
+    <a href="#config">Config</a>
+    <a href="#limits">Limits</a>
+    <a href="https://github.com/pid1/scram">GitHub</a>
+  </nav>
+</header>
+
+<main>
+
+  <section class="hero">
+    <h1>scram</h1>
+    <blockquote>A reactor scram is the emergency full shutdown: drop every rod, stop the reaction, ask questions later.</blockquote>
+    <p class="headline">Cloudflare has no hard spending limit. Its budget alerts say so explicitly &mdash; <em>"The alert is informational only. It does not cap your usage or impact your account in any way"</em> &mdash; and they are computed once a day from the previous day's usage, so the email arrives a day after the money is gone.</p>
+    <p>scram is the missing enforcement. It runs as a Worker in your own account, adds up what you have actually spent this billing cycle, and when you cross a line you set, it switches the account off.</p>
+    <div class="cta">
+      <a class="btn" href="https://github.com/pid1/scram">View on GitHub</a>
+      <a class="btn secondary" href="#install">How to install it</a>
+      <a class="tag" href="https://github.com/pid1/scram/releases/tag/v1.0.0">v1.0.0</a>
+      <a class="tag" href="https://github.com/pid1/scram/blob/main/LICENSE">BSD-3-Clause</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>What it does</h2>
+    <dl class="facts">
+      <div>
+        <dt>Estimates in minutes, not a day.</dt>
+        <dd>Reads the GraphQL Analytics API every 15 minutes and prices it against Cloudflare's published rates.</dd>
+      </div>
+      <div>
+        <dt>Discovers everything.</dt>
+        <dd>Every Worker, route, custom domain, cron trigger and <code>workers.dev</code> subdomain in the account, on every run. Deploy a new project and it is covered immediately.</dd>
+      </div>
+      <div>
+        <dt>Reversible.</dt>
+        <dd>The state it took away is written down before anything is touched, and <code>POST /api/restore</code> puts it back.</dd>
+      </div>
+      <div>
+        <dt>Safe by default.</dt>
+        <dd>Ships disarmed. It will watch and report for as long as you want before you let it touch anything.</dd>
+      </div>
+      <div>
+        <dt>Cannot switch itself off.</dt>
+        <dd>scram excludes itself from every plan, because a scram that disables its own route cannot be restored through its own UI.</dd>
+      </div>
+      <div>
+        <dt>Costs almost nothing to run.</dt>
+        <dd>2,880 Worker invocations a month and a D1 row per check. Inside the free tier of the thing it is protecting you from.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section id="trip">
+    <h2>What a trip actually does</h2>
+    <p>For every Worker except the protected ones:</p>
+    <ol class="trip">
+      <li><b>Routes.</b> Deletes each zone route pointing at it. Traffic stops reaching the Worker and the zone serves whatever it would without one.</li>
+      <li><b>Custom domains.</b> Deletes the Worker custom domain binding.</li>
+      <li><b>Crons.</b> Clears the schedule list, so nothing fires again.</li>
+      <li><b>workers.dev.</b> Disables the subdomain.</li>
+    </ol>
+    <div class="callout ok">
+      <p>What it deliberately does not do: delete Workers, delete code, delete bindings, delete R2 buckets or objects, delete D1 databases or rows, cancel subscriptions, or downgrade plans. Every one of those is either irreversible or does not stop spend any faster than the four above.</p>
+    </div>
+    <div class="callout">
+      <p>Storage keeps accruing while tripped. R2 and D1 charge for bytes at rest, and nothing short of deleting your data stops that. scram will not delete your data. If you are tripping on storage rather than compute, it buys you time, not a cure.</p>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>Install</h2>
+    <p>Needs Node 22+ and a Cloudflare account.</p>
+<pre><code>git clone https://github.com/pid1/scram &amp;&amp; cd scram
+npm install
+npx wrangler login
+
+./scripts/setup.sh      <span class="c"># database, migrations, secrets</span>
+npm run deploy</code></pre>
+    <p><code>setup.sh</code> prints the generated admin token at the end. Write it down. It is what opens the status page, and it is not recoverable afterwards.</p>
+
+    <h3>Arming it</h3>
+    <p>scram deploys disarmed, because <code>ARMED</code> is a secret and starts unset. In that state it collects usage, prices it, records a reading, and on crossing the threshold it writes a full trip record and notifies you, marked as a dry run, listing exactly what it would have disabled. Nothing changes.</p>
+    <p>Let it run for a few days. Compare the number on the status page against Manage Account &rarr; Billing &rarr; Billable Usage in the dashboard. When you believe it, arm it:</p>
+<pre><code>printf 1 | npx wrangler secret put ARMED</code></pre>
+    <p>Disarm again at any time with <code>npx wrangler secret delete ARMED</code>. Neither needs a redeploy.</p>
+  </section>
+
+  <section id="config">
+    <h2>Configuration</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Var</th><th>Default</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td><code>SCRAM_AT_USD</code></td><td><code>20</code></td><td>Estimated cycle spend that trips the switch</td></tr>
+          <tr><td><code>WARN_AT_USD</code></td><td><code>5</code></td><td>Sends a notification, changes nothing</td></tr>
+          <tr><td><code>BILLING_CYCLE_DAY</code></td><td><code>1</code></td><td>Day of month your cycle starts, per the dashboard</td></tr>
+          <tr><td><code>PROTECT</code></td><td><em>empty</em></td><td>Extra scripts to never touch. <code>scram</code> is always included</td></tr>
+          <tr><td><code>ACTIONS</code></td><td>all four</td><td><code>routes</code>, <code>custom_domains</code>, <code>crons</code>, <code>subdomain</code></td></tr>
+          <tr><td><code>CF_ACCOUNT_ID</code></td><td><em>empty</em></td><td>Only needed if the token can see several accounts</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Thresholds are measured against usage-based spend only. The API token scram needs, and why it needs each scope, is in the <a href="https://github.com/pid1/scram#the-token">README</a>. That token can disable every Worker in the account, which is the entire point of it, and the reason it lives only as a Worker secret.</p>
+
+    <h3>Endpoints</h3>
+    <div class="scroll">
+      <table>
+        <tbody>
+          <tr><td><code>GET /</code></td><td>Status page</td></tr>
+          <tr><td><code>GET /healthcheck</code></td><td>Unauthenticated, returns <code>ok</code></td></tr>
+          <tr><td><code>GET /api/status</code></td><td>Current estimate, per-meter breakdown, policy, history</td></tr>
+          <tr><td><code>GET /api/preview</code></td><td>Everything a trip would disable right now</td></tr>
+          <tr><td><code>POST /api/check</code></td><td>Run a check immediately</td></tr>
+          <tr><td><code>POST /api/scram</code></td><td>Trip manually, ignoring the estimate. Honours <code>ARMED</code></td></tr>
+          <tr><td><code>POST /api/restore</code></td><td>Undo the open trip</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Everything under <code>/api</code> needs <code>Authorization: Bearer &lt;ADMIN_TOKEN&gt;</code>.</p>
+  </section>
+
+  <section id="limits">
+    <h2>What it is not</h2>
+    <p>Currently priced: Workers, D1, R2, Durable Objects, Vectorize, Queues. Rates were verified on 2026-09-19, and the date is shown on the status page so a stale table is visible rather than quietly wrong.</p>
+    <ul class="notes">
+      <li><b>Storage is an accrual.</b> GB-months are computed the way Cloudflare documents, daily peak averaged over a 30-day month, so mid-cycle the figure is what you have accrued so far, not what the month will end at.</li>
+      <li><b>Unknown R2 operations</b> are priced as Class A, the expensive class, so a new operation type over-estimates rather than under-estimates.</li>
+      <li><b>Blind spots are loud.</b> If a collector fails, the affected product is listed on the status page as a blind spot and the total is flagged as an undercount. If every collector fails, scram notifies you and refuses to read $0 as safe.</li>
+      <li><b>It needs the platform to be up.</b> If Cloudflare's API, the analytics pipeline or the Worker itself is down, it does not fire. A failed check notifies you; a platform-wide outage might not.</li>
+    </ul>
+    <p>The number is an estimate. It is not your invoice, and it is not a guarantee.</p>
+  </section>
+
+</main>
+
+<footer>
+  <div class="inner">
+    <span>scram. BSD-3-Clause. Not affiliated with Cloudflare.</span>
+    <span>
+      <a href="https://github.com/pid1/scram">Source</a> ·
+      <a href="https://github.com/pid1/scram/releases">Releases</a> ·
+      <a href="https://github.com/pid1/scram/issues">Issues</a>
+    </span>
+  </div>
+</footer>
+
+</body>
+</html>
