@@ -25,8 +25,8 @@ jobs:
         run: npm run typecheck
 
       # The suite runs inside workerd via @cloudflare/vitest-pool-workers, so
-      # it needs no Cloudflare account and no secrets. Deploy is deliberately
-      # not wired up: it would need a token that can disable every Worker in
-      # the account, and this repo is public.
+      # it needs no Cloudflare account and no secrets. Deploys are not done
+      # here: Cloudflare Workers Builds publishes main, and cf-fallback.yml
+      # covers the pushes it misses.
       - name: Test
         run: npm test

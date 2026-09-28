@@ -2,10 +2,21 @@ name = "scram"
 main = "src/index.ts"
 compatibility_date = "2026-08-22"
 
+# Cloudflare Workers Builds deploys this on push to main. The workflow in
+# .github/workflows/cf-fallback.yml is the fallback for when that does not
+# happen, and no-ops when Cloudflare already published the commit.
+
+# Copies public/ into dist/ and writes dist/.build-id (the deployed commit).
+# Runs automatically before `wrangler dev` and `wrangler deploy`.
+[build]
+command = "./build.sh"
+watch_dir = ["src", "public"]
+
 # The status page is a static asset. It reads everything it shows from
-# /api/status, so the Worker is not invoked to serve the shell.
+# /api/status, so the Worker is not invoked to serve the shell. The source is
+# public/; build.sh stages it into dist/.
 [assets]
-directory = "./public"
+directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "404-page"
 

@@ -78,8 +78,9 @@ scram needs a Cloudflare API token, created at
 | Zone · Zone | Read (all zones) | Enumerate the zones to look in |
 
 **This token can disable every Worker in the account.** That is the entire
-point of it, and it is also the reason it lives only as a Worker secret, is
-never committed, and why CI here does not deploy.
+point of it, and it is also the reason it lives only as a Worker secret and is
+never committed. Nothing that deploys scram ever sees it: deploys keep the
+Worker's existing secrets.
 
 ### Arming it
 
@@ -209,6 +210,20 @@ npm run typecheck    # tsc --noEmit
 npm test             # vitest, inside workerd
 npm run deploy       # wrangler deploy
 ```
+
+`wrangler dev` and `wrangler deploy` run `./build.sh` first (via `[build]` in
+`wrangler.toml`), which stages `public/` into `dist/` and writes the commit
+being deployed to `dist/.build-id`, served at `/.build-id`.
+
+### Deploying
+
+Pushes to `main` are deployed by Cloudflare Workers Builds (build command
+`npm run typecheck && npm test`, deploy command `npx wrangler deploy`).
+`.github/workflows/cf-fallback.yml` waits ten minutes, reads `/.build-id` from
+the live site, and deploys with `wrangler` only if Cloudflare has not already
+published that commit. It needs the `CLOUDFLARE_API_TOKEN` and
+`CLOUDFLARE_ACCOUNT_ID` repository secrets. Neither path applies D1 migrations:
+run `npm run db:migrate` before merging a change that adds one.
 
 Tests run in workerd via `@cloudflare/vitest-pool-workers` and need no
 Cloudflare account. The pricing tests check against Cloudflare's own worked
