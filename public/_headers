@@ -1,0 +1,7 @@
+# The deploy fallback in .github/workflows/cf-fallback.yml reads /.build-id to
+# decide whether Cloudflare already published the current commit. It must
+# never be served from a cache, or the fallback would redeploy on top of a
+# good build (or skip one it should have made).
+/.build-id
+  Cache-Control: no-store
+  Content-Type: text/plain; charset=utf-8
