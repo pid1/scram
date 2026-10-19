@@ -24,7 +24,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      # The suite runs inside workerd via @cloudflare/vitest-pool-workers, so
+      # The suite runs inside workerd via @cloudflare/vitest-plugin, so
       # it needs no Cloudflare account and no secrets. Deploys are not done
       # here: Cloudflare Workers Builds publishes main, and cf-fallback.yml
       # covers the pushes it misses.

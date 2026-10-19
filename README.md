@@ -225,7 +225,7 @@ published that commit. It needs the `CLOUDFLARE_API_TOKEN` and
 `CLOUDFLARE_ACCOUNT_ID` repository secrets. Neither path applies D1 migrations:
 run `npm run db:migrate` before merging a change that adds one.
 
-Tests run in workerd via `@cloudflare/vitest-pool-workers` and need no
+Tests run in workerd via `@cloudflare/vitest-plugin` and need no
 Cloudflare account. The pricing tests check against Cloudflare's own worked
 billing examples, so if the rate table drifts they fail.
 

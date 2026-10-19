@@ -1,5 +1,5 @@
 import { defineConfig } from "vitest/config";
-import { cloudflareTest } from "@cloudflare/vitest-pool-workers";
+import { cloudflareTest } from "@cloudflare/vitest-plugin";
 
 // The suite runs inside workerd so the D1 binding behaves as it will in
 // production. It needs no Cloudflare account, no real database_id and no
