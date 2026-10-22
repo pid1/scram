@@ -19,6 +19,15 @@ jobs:
           node-version: 24
           cache: npm
 
+      # .npmrc's min-release-age (7-day supply-chain cooldown) needs npm
+      # 11.10+; older npm ignores it silently. Node 24 bundles a new enough
+      # npm today; fail loudly if that ever changes.
+      - name: Check npm honors the release-age cooldown
+        run: |
+          v=$(npm --version)
+          node -e 'const [a,b]=process.argv[1].split(".").map(Number); if (a<11||(a===11&&b<10)) { console.error(`npm ${process.argv[1]} < 11.10 ignores min-release-age`); process.exit(1) }' "$v"
+          echo "npm $v, min-release-age=$(npm config get min-release-age)"
+
       - run: npm ci
 
       - name: Typecheck
