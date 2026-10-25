@@ -6,7 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 DB_NAME="scram"
-WRANGLER="npx --yes wrangler@4"
+WRANGLER="npx --no-install wrangler"
 
 say() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 note() { printf '  %s\n' "$*"; }
