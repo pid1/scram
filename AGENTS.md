@@ -1,5 +1,9 @@
 # AGENTS.md
 
+## Homepage
+
+The README is scram's homepage and its documentation. The repository's GitHub "website" field points at it (https://github.com/pid1/scram#readme). There is no GitHub Pages site or separate landing page, and none should be added. Detail goes in other Markdown files the README links to, such as PLAN.md. When a change alters what scram does or how it's set up, update the README in the same PR.
+
 ## Sadr
 
 ### Build and test
