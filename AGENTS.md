@@ -12,7 +12,7 @@ The README is scram's homepage and its documentation. The repository's GitHub "w
 - Never run `npm run deploy`, `npm run db:migrate` or `scripts/setup.sh` for verification. They write to the Cloudflare account.
 
 ### Toolchain
-- CI and the fallback deploy pin Node 24.22.1 (npm 11.19.1) in actions/setup-node. That npm reads `min-release-age=7` from `.npmrc`, and `npm outdated` honors it.
+- CI and the fallback deploy pin Node 26.13.0 (npm 11.20.0) in actions/setup-node. That npm reads `min-release-age=7` from `.npmrc`, and `npm outdated` honors it.
 
 ### Deploys outside CI
 - Cloudflare Workers Builds deploys main on every push, from settings in the Cloudflare dashboard. `.github/workflows/cf-fallback.yml` deploys only when the live site still serves an older commit, read from `/.build-id`.
